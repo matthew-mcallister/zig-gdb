@@ -86,7 +86,9 @@ class ConstExprValuePrinter(BasicPrinter):
             variant, data = util.const_data(self.val)
         else:
             variant, data = None, '(undefined)'
-        data = data or '(invalid)'
+
+        if data is None:
+            data = '(invalid)'
 
         data_name = 'data'
         if variant:
