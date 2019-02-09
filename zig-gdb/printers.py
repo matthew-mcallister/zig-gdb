@@ -21,6 +21,35 @@ class BasicPrinter:
         return self.__class__.name
 
 
+class ConstParentPrinter(BasicPrinter):
+    """Prints a `ConstParent` in a semi-compact form."""
+
+    name = 'ConstParent'
+
+    variants = {
+        ConstParentId.ConstParentIdStruct: 'p_struct',
+        ConstParentId.ConstParentIdErrUnionCode: 'p_err_union_code',
+        ConstParentId.ConstParentIdErrUnionPayload: 'p_err_union_payload',
+        ConstParentId.ConstParentIdOptionalPayload: 'p_optional_payload',
+        ConstParentId.ConstParentIdArray: 'p_array',
+        ConstParentId.ConstParentIdUnion: 'p_union',
+        ConstParentId.ConstParentIdScalar: 'p_scalar',
+    }
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return str(self.val['id'])
+
+    def children(self):
+        variant = self.variants.get(ConstParentId(self.val['id']))
+        if variant:
+            return self.val['data'][variant].items()
+        else:
+            return []
+
+
 class ConstExprValuePrinter(BasicPrinter):
     name = 'ConstExprValue'
 

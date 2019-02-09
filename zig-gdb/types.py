@@ -18,3 +18,4 @@ def zig_enum(name):
 
 ConstValSpecial = zig_enum('ConstValSpecial')
 ZigTypeId = zig_enum('ZigTypeId')
+ConstParentId = zig_enum('ConstParentId')
