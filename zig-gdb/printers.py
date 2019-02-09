@@ -77,18 +77,15 @@ class ConstExprValuePrinter(BasicPrinter):
             type = 'null'
 
         special = ConstValSpecial(self.val['special'])
-        variant = None
         if special == ConstValSpecial.ConstValSpecialRuntime:
             data = '(runtime)'
-            variant = util.runtime_hint(self.val)
-            if variant:
-                hint = self.val['data'][variant]
+            variant, hint = util.runtime_hint(self.val)
+            if hint:
                 data += f' [hint = {hint}]'
         elif special == ConstValSpecial.ConstValSpecialStatic:
-            variant = util.const_data(self.val)
-            data = self.val['data'][variant]
+            variant, data = util.const_data(self.val)
         else:
-            data = '(undefined)'
+            variant, data = None, '(undefined)'
         data = data or '(invalid)'
 
         data_name = 'data'
