@@ -35,15 +35,14 @@ def runtime_hint(const_val):
         return None
 
     type_id = ZigTypeId(type['id'])
-    data = const_val['data']
     if type_id == ZigTypeId.ZigTypeIdPointer:
-        return data['rh_ptr']
+        return 'rh_ptr'
     elif type_id == ZigTypeId.ZigTypeIdErrorUnion:
-        return data['rh_error_union']
+        return 'rh_error_union'
     elif type_id == ZigTypeId.ZigTypeIdOptional:
-        return data['rh_maybe']
+        return 'rh_maybe'
     elif is_slice(type):
-        return data['rh_slice']
+        return 'rh_slice'
     else:
         return None
 
@@ -57,48 +56,47 @@ def const_data(const_val):
         return None
 
     type_id = ZigTypeId(type['id'])
-    data = const_val['data']
     if type_id in (ZigTypeId.ZigTypeIdInt, ZigTypeId.ZigTypeIdComptimeInt):
-        return data['x_bigint']
+        return 'x_bigint'
     elif type_id == ZigTypeId.ZigTypeIdComptimeFloat:
-        return data['x_bigfloat']
+        return 'x_bigfloat'
     elif type_id == ZigTypeId.ZigTypeIdFloat:
         bit_count = type['data']['floating']['bit_count']
         if bit_count == 16:
-            return data['x_f16']
+            return 'x_f16'
         elif bit_count == 32:
-            return data['x_f32']
+            return 'x_f32'
         elif bit_count == 64:
-            return data['x_f64']
+            return 'x_f64'
         elif bit_count == 128:
-            return data['x_f128']
+            return 'x_f128'
         else:
             raise ValueError(f'unexpected float size: {bit_count}')
     elif type_id == ZigTypeId.ZigTypeIdBool:
-        return data['x_bool']
+        return 'x_bool'
     elif type_id == ZigTypeId.ZigTypeIdBoundFn:
-        return data['x_bound_fn']
+        return 'x_bound_fn'
     elif type_id == ZigTypeId.ZigTypeIdMetaType:
-        return data['x_type']
+        return 'x_type'
     elif type_id == ZigTypeId.ZigTypeIdOptional:
-        return data['x_optional']
+        return 'x_optional'
     elif type_id == ZigTypeId.ZigTypeIdErrorUnion:
-        return data['x_err_union']
+        return 'x_err_union'
     elif type_id == ZigTypeId.ZigTypeIdErrorSet:
-        return data['x_err_set']
+        return 'x_err_set'
     elif type_id == ZigTypeId.ZigTypeIdEnum:
-        return data['x_enum_tag']
+        return 'x_enum_tag'
     elif type_id == ZigTypeId.ZigTypeIdStruct:
-        return data['x_struct']
+        return 'x_struct'
     elif type_id == ZigTypeId.ZigTypeIdUnion:
-        return data['x_struct']
+        return 'x_struct'
     elif type_id == ZigTypeId.ZigTypeIdArray:
-        return data['x_array']
+        return 'x_array'
     elif type_id == ZigTypeId.ZigTypeIdPointer:
-        return data['x_ptr']
+        return 'x_ptr'
     elif type_id == ZigTypeId.ZigTypeIdNamespace:
-        return data['x_import']
+        return 'x_import'
     elif type_id == ZigTypeId.ZigTypeIdArgTuple:
-        return data['x_arg_tuple']
+        return 'x_arg_tuple'
     else:
         return None

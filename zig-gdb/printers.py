@@ -29,22 +29,30 @@ class ConstExprValuePrinter(BasicPrinter):
 
     def children(self):
         special = ConstValSpecial(self.val['special'])
+        variant = None
         if special == ConstValSpecial.ConstValSpecialRuntime:
             data = '(runtime)'
-            hint = util.runtime_hint(self.val)
-            if hint:
-                data += ' [hint = {hint}]'
+            variant = util.runtime_hint(self.val)
+            if variant:
+                hint = self.val['data'][variant]
+                data += f' [hint = {hint}]'
         elif special == ConstValSpecial.ConstValSpecialStatic:
-            data = util.const_data(self.val)
+            variant = util.const_data(self.val)
+            data = self.val['data'][variant]
         else:
             data = '(undefined)'
         data = data or '(invalid)'
+
+        data_name = 'data'
+        if variant:
+            data_name += '.' + variant
+
         return (
             ('special', self.val['special']),
             ('type', self.val['type']),
             ('parent', self.val['parent']),
             ('global_refs', self.val['global_refs']),
-            ('data', data),
+            (data_name, data),
         )
 
 
