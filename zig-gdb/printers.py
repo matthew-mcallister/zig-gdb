@@ -36,6 +36,28 @@ class BufPrinter(BasicPrinter):
         return 'string'
 
 
+class ZigListPrinter(BasicPrinter):
+    name = 'ZigList'
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        type = util.get_basic_type(self.val.type)
+        length = self.val['length']
+        return f'{type}[length = {length}]'
+
+    def children(self):
+        length = int(self.val['length'])
+        elem = self.val['items']
+        for i in range(length):
+            yield (str(i), util.follow_ref(elem))
+            elem = elem + 1
+
+    def display_hint(self):
+        return 'array'
+
+
 class ConstParentPrinter(BasicPrinter):
     name = 'ConstParent'
 
@@ -116,7 +138,11 @@ class PrinterFactory:
         self.enabled = True
 
     def __call__(self, value):
-        type_name = util.get_basic_type(value.type)
+        full_name = util.get_basic_type(value.type)
+        if not full_name:
+            return None
+
+        type_name = full_name.split('<')[0]
         try:
             return self.printers[type_name](value)
         except KeyError:

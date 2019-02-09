@@ -26,6 +26,16 @@ def get_basic_type(type):
     return type.tag
 
 
+
+def follow_ref(val):
+    """Follows a pointer or reference and returns other values
+    immediately."""
+    try:
+        return val.referenced_value()
+    except gdb.error:
+        return val
+
+
 def runtime_hint(const_val):
     assert (ConstValSpecial(const_val['special'])
         == ConstValSpecial.ConstValSpecialRuntime)
@@ -91,7 +101,7 @@ def const_data(const_val):
     elif type_id == ZigTypeId.ZigTypeIdStruct:
         variant = 'x_struct'
     elif type_id == ZigTypeId.ZigTypeIdUnion:
-        variant = 'x_struct'
+        variant = 'x_union'
     elif type_id == ZigTypeId.ZigTypeIdArray:
         variant = 'x_array'
     elif type_id == ZigTypeId.ZigTypeIdPointer:
