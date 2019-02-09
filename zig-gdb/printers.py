@@ -21,9 +21,22 @@ class BasicPrinter:
         return self.__class__.name
 
 
-class ConstParentPrinter(BasicPrinter):
-    """Prints a `ConstParent` in a semi-compact form."""
+class BufPrinter(BasicPrinter):
+    name = 'Buf'
 
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        ls = self.val['list']
+        length = ls['length']
+        return ls['items'].string(encoding='utf-8', length=length)
+
+    def display_hint(self):
+        return 'string'
+
+
+class ConstParentPrinter(BasicPrinter):
     name = 'ConstParent'
 
     variants = {
@@ -57,6 +70,12 @@ class ConstExprValuePrinter(BasicPrinter):
         self.val = val
 
     def children(self):
+        type = self.val['type']
+        if not util.is_null(type):
+            type = type['name']
+        else:
+            type = 'null'
+
         special = ConstValSpecial(self.val['special'])
         variant = None
         if special == ConstValSpecial.ConstValSpecialRuntime:
@@ -78,7 +97,7 @@ class ConstExprValuePrinter(BasicPrinter):
 
         return (
             ('special', self.val['special']),
-            ('type', self.val['type']),
+            ('type', type),
             ('parent', self.val['parent']),
             ('global_refs', self.val['global_refs']),
             (data_name, data),
