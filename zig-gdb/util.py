@@ -112,3 +112,38 @@ def const_data(const_val):
     else:
         return None
     return variant
+
+
+def type_data(type):
+    id = ZigTypeId(type['id'])
+    if id == ZigTypeId.ZigTypeIdPointer:
+        variant = 'pointer'
+    elif id == ZigTypeId.ZigTypeIdInt:
+        variant = 'integral'
+    elif id == ZigTypeId.ZigTypeIdFloat:
+        variant = 'floating'
+    elif id == ZigTypeId.ZigTypeIdArray:
+        variant = 'array'
+    elif id == ZigTypeId.ZigTypeIdStruct:
+        variant = 'structure'
+    elif id == ZigTypeId.ZigTypeIdOptional:
+        variant = 'maybe'
+    elif id == ZigTypeId.ZigTypeIdErrorUnion:
+        variant = 'error_union'
+    elif id == ZigTypeId.ZigTypeIdErrorSet:
+        variant = 'error_set'
+    elif id == ZigTypeId.ZigTypeIdEnum:
+        variant = 'enumeration'
+    elif id == ZigTypeId.ZigTypeIdUnion:
+        variant = 'unionation'
+    elif id == ZigTypeId.ZigTypeIdFn:
+        variant = 'fn'
+    elif id == ZigTypeId.ZigTypeIdBoundFn:
+        variant = 'bound_fn'
+    elif id == ZigTypeId.ZigTypeIdPromise:
+        variant = 'promise'
+    elif id == ZigTypeId.ZigTypeIdVector:
+        variant = 'vector'
+    else:
+        variant = None
+    return variant

@@ -133,6 +133,38 @@ class ConstExprValuePrinter(BasicPrinter):
         )
 
 
+class ZigTypePrinter(BasicPrinter):
+    name = 'ZigType'
+
+    def __init__(self, val):
+        self.val = val
+
+    def children(self):
+        variant = util.type_data(self.val)
+
+        if variant:
+            data_name = 'data.' + variant
+            data = self.val['data'][variant]
+        else:
+            data_name = 'data'
+            data = '(n/a)'
+
+        field = lambda name: (name, self.val[name])
+        return (
+            field('name'),
+            field('id'),
+            (data_name, data),
+            field('type_ref'),
+            field('di_type'),
+            field('zero_bits'),
+            field('pointer_parent'),
+            field('optional_parent'),
+            field('promise_parent'),
+            field('promise_frame_parent'),
+            field('cached_const_name_val'),
+        )
+
+
 class PrinterFactory:
     """Selects a printer by consulting a mapping of type names to
     printers."""
