@@ -45,7 +45,8 @@ class ZigListPrinter(BasicPrinter):
     def to_string(self):
         type = util.get_basic_type(self.val.type)
         length = self.val['length']
-        return f'{type}[length = {length}]'
+        capacity = self.val['capacity']
+        return f'{type}[len={length}, cap={capacity}]'
 
     def children(self):
         length = int(self.val['length'])
@@ -96,18 +97,25 @@ class ConstExprValuePrinter(BasicPrinter):
         if not util.is_null(type):
             type = type['name']
         else:
-            type = 'null'
+            type = 'nullptr'
 
         special = ConstValSpecial(self.val['special'])
         if special == ConstValSpecial.ConstValSpecialRuntime:
             data = '(runtime)'
-            variant, hint = util.runtime_hint(self.val)
+            variant = util.runtime_hint(self.val)
+            hint = self.val['data'][variant]
             if hint:
                 data += f' [hint = {hint}]'
         elif special == ConstValSpecial.ConstValSpecialStatic:
-            variant, data = util.const_data(self.val)
+            variant = util.const_data(self.val)
+            data = self.val['data'][variant]
         else:
-            variant, data = None, '(undefined)'
+            variant = None
+            data = '(undefined)'
+
+        # Special case printing
+        if variant == 'x_type':
+            data = data['name']
 
         if data is None:
             data = '(invalid)'

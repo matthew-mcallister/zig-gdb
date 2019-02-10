@@ -42,7 +42,7 @@ def runtime_hint(const_val):
 
     type = const_val['type']
     if is_null(type):
-        return None, None
+        return None
 
     type_id = ZigTypeId(type['id'])
     if type_id == ZigTypeId.ZigTypeIdPointer:
@@ -54,8 +54,8 @@ def runtime_hint(const_val):
     elif is_slice(type):
         variant = 'rh_slice'
     else:
-        return None, None
-    return variant, const_val['data'][variant]
+        return None
+    return variant
 
 
 def const_data(const_val):
@@ -64,7 +64,7 @@ def const_data(const_val):
 
     type = const_val['type']
     if is_null(type):
-        return None, None
+        return None
 
     type_id = ZigTypeId(type['id'])
     if type_id in (ZigTypeId.ZigTypeIdInt, ZigTypeId.ZigTypeIdComptimeInt):
@@ -89,7 +89,6 @@ def const_data(const_val):
         variant = 'x_bound_fn'
     elif type_id == ZigTypeId.ZigTypeIdMetaType:
         variant = 'x_type'
-        return variant, const_val['data'][variant]['name']
     elif type_id == ZigTypeId.ZigTypeIdOptional:
         variant = 'x_optional'
     elif type_id == ZigTypeId.ZigTypeIdErrorUnion:
@@ -111,5 +110,5 @@ def const_data(const_val):
     elif type_id == ZigTypeId.ZigTypeIdArgTuple:
         variant = 'x_arg_tuple'
     else:
-        return None, None
-    return variant, const_val['data'][variant]
+        return None
+    return variant
