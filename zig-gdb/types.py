@@ -16,6 +16,7 @@ def zig_enum(name):
     return res
 
 
-ZigTypeId = zig_enum('ZigTypeId')
 ConstParentId = zig_enum('ConstParentId')
 ConstValSpecial = zig_enum('ConstValSpecial')
+IrInstructionId = zig_enum('IrInstructionId')
+ZigTypeId = zig_enum('ZigTypeId')

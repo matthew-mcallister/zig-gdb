@@ -165,6 +165,41 @@ class ZigTypePrinter(BasicPrinter):
         )
 
 
+class IrInstructionPrinter(BasicPrinter):
+    name = 'IrInstruction'
+
+    def __init__(self, val):
+        self.base = val
+        self.casted = util.cast_instruction(val)
+
+    def to_string(self):
+        if not self.casted:
+            return '(invalid)'
+        else:
+            return self.name
+
+    def children(self):
+        if not self.casted:
+            return []
+
+        children = [('id', self.base['id'])]
+
+        # XXX: This results in some redundancy when printing the casted
+        # instruction directly.
+        children.extend((
+            (k, v)
+            for k, v in util.value_items(self.casted)
+            if k != 'base'
+        ))
+        children.extend((
+            (k, v)
+            for k, v in util.value_items(self.base)
+            if k != 'id'
+        ))
+
+        return children
+
+
 class PrinterFactory:
     """Selects a printer by consulting a mapping of type names to
     printers."""

@@ -26,7 +26,6 @@ def get_basic_type(type):
     return type.tag
 
 
-
 def follow_ref(val):
     """Follows a pointer or reference and returns other values
     immediately."""
@@ -34,6 +33,13 @@ def follow_ref(val):
         return val.referenced_value()
     except gdb.error:
         return val
+
+
+def value_items(val):
+    """Returns an iterator over the `key, value` pairs of fields of a
+    value."""
+    for field in val.type.fields():
+        yield (field.name, val[field])
 
 
 def runtime_hint(const_val):
@@ -67,11 +73,8 @@ def const_data(const_val):
         return None
 
     type_id = ZigTypeId(type['id'])
-    if type_id in (ZigTypeId.ZigTypeIdInt, ZigTypeId.ZigTypeIdComptimeInt):
-        variant = 'x_bigint'
-    elif type_id == ZigTypeId.ZigTypeIdComptimeFloat:
-        variant = 'x_bigfloat'
-    elif type_id == ZigTypeId.ZigTypeIdFloat:
+
+    if type_id == ZigTypeId.ZigTypeIdFloat:
         bit_count = type['data']['floating']['bit_count']
         if bit_count == 16:
             variant = 'x_f16'
@@ -83,67 +86,204 @@ def const_data(const_val):
             variant = 'x_f128'
         else:
             raise ValueError(f'unexpected float size: {bit_count}')
-    elif type_id == ZigTypeId.ZigTypeIdBool:
-        variant = 'x_bool'
-    elif type_id == ZigTypeId.ZigTypeIdBoundFn:
-        variant = 'x_bound_fn'
-    elif type_id == ZigTypeId.ZigTypeIdMetaType:
-        variant = 'x_type'
-    elif type_id == ZigTypeId.ZigTypeIdOptional:
-        variant = 'x_optional'
-    elif type_id == ZigTypeId.ZigTypeIdErrorUnion:
-        variant = 'x_err_union'
-    elif type_id == ZigTypeId.ZigTypeIdErrorSet:
-        variant = 'x_err_set'
-    elif type_id == ZigTypeId.ZigTypeIdEnum:
-        variant = 'x_enum_tag'
-    elif type_id == ZigTypeId.ZigTypeIdStruct:
-        variant = 'x_struct'
-    elif type_id == ZigTypeId.ZigTypeIdUnion:
-        variant = 'x_union'
-    elif type_id == ZigTypeId.ZigTypeIdArray:
-        variant = 'x_array'
-    elif type_id == ZigTypeId.ZigTypeIdPointer:
-        variant = 'x_ptr'
-    elif type_id == ZigTypeId.ZigTypeIdNamespace:
-        variant = 'x_import'
-    elif type_id == ZigTypeId.ZigTypeIdArgTuple:
-        variant = 'x_arg_tuple'
-    else:
-        return None
-    return variant
+        return variant
+
+    variants = {
+        ZigTypeId.ZigTypeIdInt: 'x_bigint',
+        ZigTypeId.ZigTypeIdComptimeInt: 'x_bigint',
+        ZigTypeId.ZigTypeIdComptimeFloat: 'x_bigfloat',
+        ZigTypeId.ZigTypeIdBool: 'x_bool',
+        ZigTypeId.ZigTypeIdBoundFn: 'x_bound_fn',
+        ZigTypeId.ZigTypeIdMetaType: 'x_type',
+        ZigTypeId.ZigTypeIdOptional: 'x_optional',
+        ZigTypeId.ZigTypeIdErrorUnion: 'x_err_union',
+        ZigTypeId.ZigTypeIdErrorSet: 'x_err_set',
+        ZigTypeId.ZigTypeIdEnum: 'x_enum_tag',
+        ZigTypeId.ZigTypeIdStruct: 'x_struct',
+        ZigTypeId.ZigTypeIdUnion: 'x_union',
+        ZigTypeId.ZigTypeIdArray: 'x_array',
+        ZigTypeId.ZigTypeIdPointer: 'x_ptr',
+        ZigTypeId.ZigTypeIdNamespace: 'x_import',
+        ZigTypeId.ZigTypeIdArgTuple: 'x_arg_tuple',
+    }
+    return variants.get(type_id)
 
 
 def type_data(type):
     id = ZigTypeId(type['id'])
-    if id == ZigTypeId.ZigTypeIdPointer:
-        variant = 'pointer'
-    elif id == ZigTypeId.ZigTypeIdInt:
-        variant = 'integral'
-    elif id == ZigTypeId.ZigTypeIdFloat:
-        variant = 'floating'
-    elif id == ZigTypeId.ZigTypeIdArray:
-        variant = 'array'
-    elif id == ZigTypeId.ZigTypeIdStruct:
-        variant = 'structure'
-    elif id == ZigTypeId.ZigTypeIdOptional:
-        variant = 'maybe'
-    elif id == ZigTypeId.ZigTypeIdErrorUnion:
-        variant = 'error_union'
-    elif id == ZigTypeId.ZigTypeIdErrorSet:
-        variant = 'error_set'
-    elif id == ZigTypeId.ZigTypeIdEnum:
-        variant = 'enumeration'
-    elif id == ZigTypeId.ZigTypeIdUnion:
-        variant = 'unionation'
-    elif id == ZigTypeId.ZigTypeIdFn:
-        variant = 'fn'
-    elif id == ZigTypeId.ZigTypeIdBoundFn:
-        variant = 'bound_fn'
-    elif id == ZigTypeId.ZigTypeIdPromise:
-        variant = 'promise'
-    elif id == ZigTypeId.ZigTypeIdVector:
-        variant = 'vector'
-    else:
-        variant = None
-    return variant
+    variants = {
+        ZigTypeId.ZigTypeIdPointer: 'pointer',
+        ZigTypeId.ZigTypeIdInt: 'integral',
+        ZigTypeId.ZigTypeIdFloat: 'floating',
+        ZigTypeId.ZigTypeIdArray: 'array',
+        ZigTypeId.ZigTypeIdStruct: 'structure',
+        ZigTypeId.ZigTypeIdOptional: 'maybe',
+        ZigTypeId.ZigTypeIdErrorUnion: 'error_union',
+        ZigTypeId.ZigTypeIdErrorSet: 'error_set',
+        ZigTypeId.ZigTypeIdEnum: 'enumeration',
+        ZigTypeId.ZigTypeIdUnion: 'unionation',
+        ZigTypeId.ZigTypeIdFn: 'fn',
+        ZigTypeId.ZigTypeIdBoundFn: 'bound_fn',
+        ZigTypeId.ZigTypeIdPromise: 'promise',
+        ZigTypeId.ZigTypeIdVector: 'vector',
+    }
+    return variants.get(id)
+
+
+def cast_instruction(inst):
+    id = IrInstructionId(inst['id'])
+    variants = {
+        IrInstructionId.IrInstructionIdDeclVarSrc: 'IrInstructionDeclVarSrc',
+        IrInstructionId.IrInstructionIdDeclVarGen: 'IrInstructionDeclVarGen',
+        IrInstructionId.IrInstructionIdBr: 'IrInstructionBr',
+        IrInstructionId.IrInstructionIdCondBr: 'IrInstructionCondBr',
+        IrInstructionId.IrInstructionIdSwitchBr: 'IrInstructionSwitchBr',
+        IrInstructionId.IrInstructionIdSwitchVar: 'IrInstructionSwitchVar',
+        IrInstructionId.IrInstructionIdSwitchTarget: 'IrInstructionSwitchTarget',
+        IrInstructionId.IrInstructionIdPhi: 'IrInstructionPhi',
+        IrInstructionId.IrInstructionIdUnOp: 'IrInstructionUnOp',
+        IrInstructionId.IrInstructionIdBinOp: 'IrInstructionBinOp',
+        IrInstructionId.IrInstructionIdLoadPtr: 'IrInstructionLoadPtr',
+        IrInstructionId.IrInstructionIdStorePtr: 'IrInstructionStorePtr',
+        IrInstructionId.IrInstructionIdFieldPtr: 'IrInstructionFieldPtr',
+        IrInstructionId.IrInstructionIdStructFieldPtr: 'IrInstructionStructFieldPtr',
+        IrInstructionId.IrInstructionIdUnionFieldPtr: 'IrInstructionUnionFieldPtr',
+        IrInstructionId.IrInstructionIdElemPtr: 'IrInstructionElemPtr',
+        IrInstructionId.IrInstructionIdVarPtr: 'IrInstructionVarPtr',
+        IrInstructionId.IrInstructionIdCall: 'IrInstructionCall',
+        IrInstructionId.IrInstructionIdConst: 'IrInstructionConst',
+        IrInstructionId.IrInstructionIdReturn: 'IrInstructionReturn',
+        IrInstructionId.IrInstructionIdCast: 'IrInstructionCast',
+        IrInstructionId.IrInstructionIdContainerInitList: 'IrInstructionContainerInitList',
+        IrInstructionId.IrInstructionIdContainerInitFields: 'IrInstructionContainerInitFields',
+        IrInstructionId.IrInstructionIdStructInit: 'IrInstructionStructInit',
+        IrInstructionId.IrInstructionIdUnionInit: 'IrInstructionUnionInit',
+        IrInstructionId.IrInstructionIdUnreachable: 'IrInstructionUnreachable',
+        IrInstructionId.IrInstructionIdTypeOf: 'IrInstructionTypeOf',
+        IrInstructionId.IrInstructionIdToPtrType: 'IrInstructionToPtrType',
+        IrInstructionId.IrInstructionIdPtrTypeChild: 'IrInstructionPtrTypeChild',
+        IrInstructionId.IrInstructionIdSetCold: 'IrInstructionSetCold',
+        IrInstructionId.IrInstructionIdSetRuntimeSafety: 'IrInstructionSetRuntimeSafety',
+        IrInstructionId.IrInstructionIdSetFloatMode: 'IrInstructionSetFloatMode',
+        IrInstructionId.IrInstructionIdArrayType: 'IrInstructionArrayType',
+        IrInstructionId.IrInstructionIdPromiseType: 'IrInstructionPromiseType',
+        IrInstructionId.IrInstructionIdSliceType: 'IrInstructionSliceType',
+        IrInstructionId.IrInstructionIdAsm: 'IrInstructionAsm',
+        IrInstructionId.IrInstructionIdSizeOf: 'IrInstructionSizeOf',
+        IrInstructionId.IrInstructionIdTestNonNull: 'IrInstructionTestNonNull',
+        IrInstructionId.IrInstructionIdOptionalUnwrapPtr: 'IrInstructionOptionalUnwrapPtr',
+        IrInstructionId.IrInstructionIdOptionalWrap: 'IrInstructionOptionalWrap',
+        IrInstructionId.IrInstructionIdUnionTag: 'IrInstructionUnionTag',
+        IrInstructionId.IrInstructionIdClz: 'IrInstructionClz',
+        IrInstructionId.IrInstructionIdCtz: 'IrInstructionCtz',
+        IrInstructionId.IrInstructionIdPopCount: 'IrInstructionPopCount',
+        IrInstructionId.IrInstructionIdImport: 'IrInstructionImport',
+        IrInstructionId.IrInstructionIdCImport: 'IrInstructionCImport',
+        IrInstructionId.IrInstructionIdCInclude: 'IrInstructionCInclude',
+        IrInstructionId.IrInstructionIdCDefine: 'IrInstructionCDefine',
+        IrInstructionId.IrInstructionIdCUndef: 'IrInstructionCUndef',
+        IrInstructionId.IrInstructionIdRef: 'IrInstructionRef',
+        IrInstructionId.IrInstructionIdCompileErr: 'IrInstructionCompileErr',
+        IrInstructionId.IrInstructionIdCompileLog: 'IrInstructionCompileLog',
+        IrInstructionId.IrInstructionIdErrName: 'IrInstructionErrName',
+        IrInstructionId.IrInstructionIdEmbedFile: 'IrInstructionEmbedFile',
+        IrInstructionId.IrInstructionIdCmpxchgSrc: 'IrInstructionCmpxchgSrc',
+        IrInstructionId.IrInstructionIdCmpxchgGen: 'IrInstructionCmpxchgGen',
+        IrInstructionId.IrInstructionIdFence: 'IrInstructionFence',
+        IrInstructionId.IrInstructionIdTruncate: 'IrInstructionTruncate',
+        IrInstructionId.IrInstructionIdIntCast: 'IrInstructionIntCast',
+        IrInstructionId.IrInstructionIdFloatCast: 'IrInstructionFloatCast',
+        IrInstructionId.IrInstructionIdIntToFloat: 'IrInstructionIntToFloat',
+        IrInstructionId.IrInstructionIdFloatToInt: 'IrInstructionFloatToInt',
+        IrInstructionId.IrInstructionIdBoolToInt: 'IrInstructionBoolToInt',
+        IrInstructionId.IrInstructionIdIntType: 'IrInstructionIntType',
+        IrInstructionId.IrInstructionIdVectorType: 'IrInstructionVectorType',
+        IrInstructionId.IrInstructionIdBoolNot: 'IrInstructionBoolNot',
+        IrInstructionId.IrInstructionIdMemset: 'IrInstructionMemset',
+        IrInstructionId.IrInstructionIdMemcpy: 'IrInstructionMemcpy',
+        IrInstructionId.IrInstructionIdSlice: 'IrInstructionSlice',
+        IrInstructionId.IrInstructionIdMemberCount: 'IrInstructionMemberCount',
+        IrInstructionId.IrInstructionIdMemberType: 'IrInstructionMemberType',
+        IrInstructionId.IrInstructionIdMemberName: 'IrInstructionMemberName',
+        IrInstructionId.IrInstructionIdBreakpoint: 'IrInstructionBreakpoint',
+        IrInstructionId.IrInstructionIdReturnAddress: 'IrInstructionReturnAddress',
+        IrInstructionId.IrInstructionIdFrameAddress: 'IrInstructionFrameAddress',
+        IrInstructionId.IrInstructionIdHandle: 'IrInstructionHandle',
+        IrInstructionId.IrInstructionIdAlignOf: 'IrInstructionAlignOf',
+        IrInstructionId.IrInstructionIdOverflowOp: 'IrInstructionOverflowOp',
+        IrInstructionId.IrInstructionIdTestErr: 'IrInstructionTestErr',
+        IrInstructionId.IrInstructionIdUnwrapErrCode: 'IrInstructionUnwrapErrCode',
+        IrInstructionId.IrInstructionIdUnwrapErrPayload: 'IrInstructionUnwrapErrPayload',
+        IrInstructionId.IrInstructionIdErrWrapCode: 'IrInstructionErrWrapCode',
+        IrInstructionId.IrInstructionIdErrWrapPayload: 'IrInstructionErrWrapPayload',
+        IrInstructionId.IrInstructionIdFnProto: 'IrInstructionFnProto',
+        IrInstructionId.IrInstructionIdTestComptime: 'IrInstructionTestComptime',
+        IrInstructionId.IrInstructionIdPtrCastSrc: 'IrInstructionPtrCastSrc',
+        IrInstructionId.IrInstructionIdPtrCastGen: 'IrInstructionPtrCastGen',
+        IrInstructionId.IrInstructionIdBitCast: 'IrInstructionBitCast',
+        IrInstructionId.IrInstructionIdWidenOrShorten: 'IrInstructionWidenOrShorten',
+        IrInstructionId.IrInstructionIdIntToPtr: 'IrInstructionIntToPtr',
+        IrInstructionId.IrInstructionIdPtrToInt: 'IrInstructionPtrToInt',
+        IrInstructionId.IrInstructionIdIntToEnum: 'IrInstructionIntToEnum',
+        IrInstructionId.IrInstructionIdEnumToInt: 'IrInstructionEnumToInt',
+        IrInstructionId.IrInstructionIdIntToErr: 'IrInstructionIntToErr',
+        IrInstructionId.IrInstructionIdErrToInt: 'IrInstructionErrToInt',
+        IrInstructionId.IrInstructionIdCheckSwitchProngs: 'IrInstructionCheckSwitchProngs',
+        IrInstructionId.IrInstructionIdCheckStatementIsVoid: 'IrInstructionCheckStatementIsVoid',
+        IrInstructionId.IrInstructionIdTypeName: 'IrInstructionTypeName',
+        IrInstructionId.IrInstructionIdDeclRef: 'IrInstructionDeclRef',
+        IrInstructionId.IrInstructionIdPanic: 'IrInstructionPanic',
+        IrInstructionId.IrInstructionIdTagName: 'IrInstructionTagName',
+        IrInstructionId.IrInstructionIdTagType: 'IrInstructionTagType',
+        IrInstructionId.IrInstructionIdFieldParentPtr: 'IrInstructionFieldParentPtr',
+        IrInstructionId.IrInstructionIdByteOffsetOf: 'IrInstructionByteOffsetOf',
+        IrInstructionId.IrInstructionIdBitOffsetOf: 'IrInstructionBitOffsetOf',
+        IrInstructionId.IrInstructionIdTypeInfo: 'IrInstructionTypeInfo',
+        IrInstructionId.IrInstructionIdTypeId: 'IrInstructionTypeId',
+        IrInstructionId.IrInstructionIdSetEvalBranchQuota: 'IrInstructionSetEvalBranchQuota',
+        IrInstructionId.IrInstructionIdPtrType: 'IrInstructionPtrType',
+        IrInstructionId.IrInstructionIdAlignCast: 'IrInstructionAlignCast',
+        IrInstructionId.IrInstructionIdOpaqueType: 'IrInstructionOpaqueType',
+        IrInstructionId.IrInstructionIdSetAlignStack: 'IrInstructionSetAlignStack',
+        IrInstructionId.IrInstructionIdArgType: 'IrInstructionArgType',
+        IrInstructionId.IrInstructionIdExport: 'IrInstructionExport',
+        IrInstructionId.IrInstructionIdErrorReturnTrace: 'IrInstructionErrorReturnTrace',
+        IrInstructionId.IrInstructionIdErrorUnion: 'IrInstructionErrorUnion',
+        IrInstructionId.IrInstructionIdCancel: 'IrInstructionCancel',
+        IrInstructionId.IrInstructionIdGetImplicitAllocator: 'IrInstructionGetImplicitAllocator',
+        IrInstructionId.IrInstructionIdCoroId: 'IrInstructionCoroId',
+        IrInstructionId.IrInstructionIdCoroAlloc: 'IrInstructionCoroAlloc',
+        IrInstructionId.IrInstructionIdCoroSize: 'IrInstructionCoroSize',
+        IrInstructionId.IrInstructionIdCoroBegin: 'IrInstructionCoroBegin',
+        IrInstructionId.IrInstructionIdCoroAllocFail: 'IrInstructionCoroAllocFail',
+        IrInstructionId.IrInstructionIdCoroSuspend: 'IrInstructionCoroSuspend',
+        IrInstructionId.IrInstructionIdCoroEnd: 'IrInstructionCoroEnd',
+        IrInstructionId.IrInstructionIdCoroFree: 'IrInstructionCoroFree',
+        IrInstructionId.IrInstructionIdCoroResume: 'IrInstructionCoroResume',
+        IrInstructionId.IrInstructionIdCoroSave: 'IrInstructionCoroSave',
+        IrInstructionId.IrInstructionIdCoroPromise: 'IrInstructionCoroPromise',
+        IrInstructionId.IrInstructionIdCoroAllocHelper: 'IrInstructionCoroAllocHelper',
+        IrInstructionId.IrInstructionIdAtomicRmw: 'IrInstructionAtomicRmw',
+        IrInstructionId.IrInstructionIdAtomicLoad: 'IrInstructionAtomicLoad',
+        IrInstructionId.IrInstructionIdPromiseResultType: 'IrInstructionPromiseResultType',
+        IrInstructionId.IrInstructionIdAwaitBookkeeping: 'IrInstructionAwaitBookkeeping',
+        IrInstructionId.IrInstructionIdSaveErrRetAddr: 'IrInstructionSaveErrRetAddr',
+        IrInstructionId.IrInstructionIdAddImplicitReturnType: 'IrInstructionAddImplicitReturnType',
+        IrInstructionId.IrInstructionIdMergeErrRetTraces: 'IrInstructionMergeErrRetTraces',
+        IrInstructionId.IrInstructionIdMarkErrRetTracePtr: 'IrInstructionMarkErrRetTracePtr',
+        IrInstructionId.IrInstructionIdSqrt: 'IrInstructionSqrt',
+        IrInstructionId.IrInstructionIdBswap: 'IrInstructionBswap',
+        IrInstructionId.IrInstructionIdBitReverse: 'IrInstructionBitReverse',
+        IrInstructionId.IrInstructionIdErrSetCast: 'IrInstructionErrSetCast',
+        IrInstructionId.IrInstructionIdToBytes: 'IrInstructionToBytes',
+        IrInstructionId.IrInstructionIdFromBytes: 'IrInstructionFromBytes',
+        IrInstructionId.IrInstructionIdCheckRuntimeScope: 'IrInstructionCheckRuntimeScope',
+        IrInstructionId.IrInstructionIdVectorToArray: 'IrInstructionVectorToArray',
+        IrInstructionId.IrInstructionIdArrayToVector: 'IrInstructionArrayToVector',
+    }
+    type_name = variants.get(id)
+    if not type_name:
+        return None
+
+    casted_type = gdb.lookup_type(type_name)
+    return inst.address.reinterpret_cast(casted_type.pointer())
