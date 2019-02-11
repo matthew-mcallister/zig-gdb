@@ -1,7 +1,7 @@
 import gdb.printing
 
-from . import util
-from .types import *
+from zig import util
+from zig.types import *
 
 
 zig_printers = []
@@ -28,9 +28,7 @@ class BufPrinter(BasicPrinter):
         self.val = val
 
     def to_string(self):
-        ls = self.val['list']
-        length = ls['length']
-        return ls['items'].string(encoding='utf-8', length=length)
+        return util.buf_to_string(self.val)
 
     def display_hint(self):
         return 'string'

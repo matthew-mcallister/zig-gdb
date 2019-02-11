@@ -1,6 +1,6 @@
 import gdb
 
-from .types import *
+from zig.types import *
 
 
 def is_null(ptr):
@@ -40,6 +40,13 @@ def value_items(val):
     value."""
     for field in val.type.fields():
         yield (field.name, val[field])
+
+
+def buf_to_string(buf):
+    """Creates a Python string from a Buf variable."""
+    ls = buf['list']
+    length = ls['length']
+    return ls['items'].string(encoding='utf-8', length=length)
 
 
 def runtime_hint(const_val):
