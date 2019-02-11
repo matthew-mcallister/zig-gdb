@@ -19,4 +19,5 @@ def zig_enum(name):
 ConstParentId = zig_enum('ConstParentId')
 ConstValSpecial = zig_enum('ConstValSpecial')
 IrInstructionId = zig_enum('IrInstructionId')
+NodeType = zig_enum('NodeType')
 ZigTypeId = zig_enum('ZigTypeId')

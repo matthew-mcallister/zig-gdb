@@ -200,6 +200,25 @@ class IrInstructionPrinter(BasicPrinter):
         return children
 
 
+class AstNodePrinter(BasicPrinter):
+    name = 'AstNode'
+
+    def __init__(self, val):
+        self.val = val
+
+    def children(self):
+        variant = util.ast_node_variant(self.val)
+        data = self.val['data'][variant]
+        field = lambda name: (name, self.val[name])
+        return (
+            field('type'),
+            field('line'),
+            field('column'),
+            ('owner', self.val['owner']['path'].referenced_value()),
+            ('data.' + variant, data)
+        )
+
+
 class PrinterFactory:
     """Selects a printer by consulting a mapping of type names to
     printers."""
