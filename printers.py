@@ -186,7 +186,7 @@ class IrInstructionPrinter(BasicPrinter):
         # instruction directly.
         children.extend((
             (k, v)
-            for k, v in util.value_items(self.casted)
+            for k, v in util.value_items(self.casted.referenced_value())
             if k != 'base'
         ))
         children.extend((
