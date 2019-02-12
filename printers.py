@@ -79,7 +79,7 @@ class ConstParentPrinter(BasicPrinter):
     def children(self):
         variant = self.variants.get(ConstParentId(self.val['id']))
         if variant:
-            return self.val['data'][variant].items()
+            return util.value_items(self.val['data'][variant])
         else:
             return []
 
@@ -98,6 +98,7 @@ class ConstExprValuePrinter(BasicPrinter):
             type = 'nullptr'
 
         special = ConstValSpecial(self.val['special'])
+        data = None
         if special == ConstValSpecial.ConstValSpecialRuntime:
             data = '(runtime)'
             variant = util.runtime_hint(self.val)
@@ -106,7 +107,8 @@ class ConstExprValuePrinter(BasicPrinter):
                 data += f' [hint = {hint}]'
         elif special == ConstValSpecial.ConstValSpecialStatic:
             variant = util.const_data(self.val)
-            data = self.val['data'][variant]
+            if variant:
+                data = self.val['data'][variant]
         else:
             variant = None
             data = '(undefined)'
